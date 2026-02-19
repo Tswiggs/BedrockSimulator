@@ -1,0 +1,423 @@
+{
+  "_metadata": {
+    "research_date": "2026-02-18",
+    "sources": [
+      "https://aws.amazon.com/bedrock/pricing/",
+      "https://platform.claude.com/docs/en/about-claude/pricing",
+      "https://platform.claude.com/docs/en/build-with-claude/claude-on-amazon-bedrock",
+      "https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html",
+      "https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-caching.html",
+      "https://aws.amazon.com/nova/pricing/",
+      "https://pricepertoken.com/pricing-page/provider/amazon"
+    ],
+    "price_unit": "USD per 1,000 tokens",
+    "notes": [
+      "All prices are for US East / US West on-demand standard tier (global cross-region inference).",
+      "Regional endpoints for Claude Sonnet 4.5+ and Haiku 4.5+ carry a 10% premium over global endpoints.",
+      "Batch inference on Bedrock is 50% of on-demand pricing for supported models.",
+      "Prompt caching multipliers (Anthropic): cache read = 0.1x base input, 5-min write = 1.25x base input, 1-hour write = 2x base input.",
+      "Amazon Nova models use automatic prompt caching; cache writes are at standard input rate, cache reads at ~25% of input rate.",
+      "Titan Text models (Lite/Express/Premier) are legacy and no longer appear in the current Bedrock model catalog — dropped.",
+      "Claude 3.5 Sonnet v2, 3.5 Haiku, 3 Opus, 3 Haiku are deprecated or extended-access — dropped from active lineup.",
+      "Nova 2 Pro exists in Preview but is only available to Nova Forge customers — not included."
+    ]
+  },
+  "anthropic_models": [
+    {
+      "model_id": "anthropic.claude-opus-4-6-v1",
+      "display_name": "Claude Opus 4.6",
+      "release_date": "2026-01",
+      "status": "available (latest flagship)",
+      "context_window": 1000000,
+      "pricing": {
+        "input_per_1k_tokens": 0.005,
+        "output_per_1k_tokens": 0.025,
+        "cache_write_per_1k_tokens": 0.00625,
+        "cache_read_per_1k_tokens": 0.0005,
+        "batch_input_per_1k_tokens": null,
+        "batch_output_per_1k_tokens": null
+      },
+      "supports": {
+        "caching": true,
+        "batch": false,
+        "vision": true
+      },
+      "min_cache_ttl_seconds": 300,
+      "_note": "Supports both 5-min and 1-hour cache TTL. Batch available on Anthropic API ($2.50/$12.50 per MTok) but NOT on Bedrock."
+    },
+    {
+      "model_id": "anthropic.claude-sonnet-4-6",
+      "display_name": "Claude Sonnet 4.6",
+      "release_date": "2026-01",
+      "status": "available",
+      "context_window": 1000000,
+      "pricing": {
+        "input_per_1k_tokens": 0.003,
+        "output_per_1k_tokens": 0.015,
+        "cache_write_per_1k_tokens": 0.00375,
+        "cache_read_per_1k_tokens": 0.0003,
+        "batch_input_per_1k_tokens": null,
+        "batch_output_per_1k_tokens": null
+      },
+      "supports": {
+        "caching": true,
+        "batch": false,
+        "vision": true
+      },
+      "min_cache_ttl_seconds": 300,
+      "_note": "User did not request this model but it exists on Bedrock. Same pricing tier as Sonnet 4.5/4. Supports 5-min and 1-hour TTL."
+    },
+    {
+      "model_id": "anthropic.claude-sonnet-4-5-20250929-v1:0",
+      "display_name": "Claude Sonnet 4.5",
+      "release_date": "2025-09-29",
+      "status": "available",
+      "context_window": 1000000,
+      "pricing": {
+        "input_per_1k_tokens": 0.003,
+        "output_per_1k_tokens": 0.015,
+        "cache_write_per_1k_tokens": 0.00375,
+        "cache_read_per_1k_tokens": 0.0003,
+        "batch_input_per_1k_tokens": null,
+        "batch_output_per_1k_tokens": null
+      },
+      "supports": {
+        "caching": true,
+        "batch": false,
+        "vision": true
+      },
+      "min_cache_ttl_seconds": 300,
+      "_note": "Supports both 5-min and 1-hour cache TTL. Batch NOT supported on Bedrock."
+    },
+    {
+      "model_id": "anthropic.claude-haiku-4-5-20251001-v1:0",
+      "display_name": "Claude Haiku 4.5",
+      "release_date": "2025-10-01",
+      "status": "available",
+      "context_window": 200000,
+      "pricing": {
+        "input_per_1k_tokens": 0.001,
+        "output_per_1k_tokens": 0.005,
+        "cache_write_per_1k_tokens": 0.00125,
+        "cache_read_per_1k_tokens": 0.0001,
+        "batch_input_per_1k_tokens": null,
+        "batch_output_per_1k_tokens": null
+      },
+      "supports": {
+        "caching": true,
+        "batch": false,
+        "vision": true
+      },
+      "min_cache_ttl_seconds": 300,
+      "_note": "Supports both 5-min and 1-hour cache TTL. Batch NOT supported on Bedrock."
+    },
+    {
+      "model_id": "anthropic.claude-opus-4-5-20251101-v1:0",
+      "display_name": "Claude Opus 4.5",
+      "release_date": "2025-11-01",
+      "status": "available",
+      "context_window": 200000,
+      "pricing": {
+        "input_per_1k_tokens": 0.005,
+        "output_per_1k_tokens": 0.025,
+        "cache_write_per_1k_tokens": 0.00625,
+        "cache_read_per_1k_tokens": 0.0005,
+        "batch_input_per_1k_tokens": null,
+        "batch_output_per_1k_tokens": null
+      },
+      "supports": {
+        "caching": true,
+        "batch": false,
+        "vision": true
+      },
+      "min_cache_ttl_seconds": 300,
+      "_note": "Supports both 5-min and 1-hour cache TTL. Same pricing tier as Opus 4.6. Batch NOT supported on Bedrock."
+    },
+    {
+      "model_id": "anthropic.claude-opus-4-1-20250805-v1:0",
+      "display_name": "Claude Opus 4.1",
+      "release_date": "2025-08-05",
+      "status": "available",
+      "context_window": 200000,
+      "pricing": {
+        "input_per_1k_tokens": 0.015,
+        "output_per_1k_tokens": 0.075,
+        "cache_write_per_1k_tokens": 0.01875,
+        "cache_read_per_1k_tokens": 0.0015,
+        "batch_input_per_1k_tokens": null,
+        "batch_output_per_1k_tokens": null
+      },
+      "supports": {
+        "caching": true,
+        "batch": false,
+        "vision": true
+      },
+      "min_cache_ttl_seconds": 300,
+      "_note": "Only 5-min cache TTL (no 1-hour). Same pricing tier as Opus 4/3. Only available in US regions on Bedrock."
+    },
+    {
+      "model_id": "anthropic.claude-opus-4-20250514-v1:0",
+      "display_name": "Claude Opus 4",
+      "release_date": "2025-05-14",
+      "status": "available",
+      "context_window": 200000,
+      "pricing": {
+        "input_per_1k_tokens": 0.015,
+        "output_per_1k_tokens": 0.075,
+        "cache_write_per_1k_tokens": 0.01875,
+        "cache_read_per_1k_tokens": 0.0015,
+        "batch_input_per_1k_tokens": null,
+        "batch_output_per_1k_tokens": null
+      },
+      "supports": {
+        "caching": true,
+        "batch": false,
+        "vision": true
+      },
+      "min_cache_ttl_seconds": 300,
+      "_note": "Only 5-min cache TTL. Same pricing as Opus 4.1. Only available in US regions on Bedrock."
+    },
+    {
+      "model_id": "anthropic.claude-sonnet-4-20250514-v1:0",
+      "display_name": "Claude Sonnet 4",
+      "release_date": "2025-05-14",
+      "status": "available",
+      "context_window": 1000000,
+      "pricing": {
+        "input_per_1k_tokens": 0.003,
+        "output_per_1k_tokens": 0.015,
+        "cache_write_per_1k_tokens": 0.00375,
+        "cache_read_per_1k_tokens": 0.0003,
+        "batch_input_per_1k_tokens": null,
+        "batch_output_per_1k_tokens": null
+      },
+      "supports": {
+        "caching": true,
+        "batch": false,
+        "vision": true
+      },
+      "min_cache_ttl_seconds": 300,
+      "_note": "Only 5-min cache TTL. Same pricing tier as all Sonnet 4.x models."
+    },
+    {
+      "model_id": "anthropic.claude-3-7-sonnet-20250219-v1:0",
+      "display_name": "Claude 3.7 Sonnet",
+      "release_date": "2025-02-19",
+      "status": "deprecated",
+      "context_window": 200000,
+      "pricing": {
+        "input_per_1k_tokens": 0.003,
+        "output_per_1k_tokens": 0.015,
+        "cache_write_per_1k_tokens": 0.00375,
+        "cache_read_per_1k_tokens": 0.0003,
+        "batch_input_per_1k_tokens": null,
+        "batch_output_per_1k_tokens": null
+      },
+      "supports": {
+        "caching": true,
+        "batch": false,
+        "vision": true
+      },
+      "min_cache_ttl_seconds": 300,
+      "_note": "Deprecated by Anthropic. Only 5-min cache TTL. Still available on Bedrock in US and EU regions."
+    }
+  ],
+  "amazon_models": [
+    {
+      "model_id": "amazon.nova-premier-v1:0",
+      "display_name": "Amazon Nova Premier",
+      "release_date": "2025-10-01",
+      "status": "available",
+      "context_window": 1000000,
+      "pricing": {
+        "input_per_1k_tokens": 0.0025,
+        "output_per_1k_tokens": 0.0125,
+        "cache_write_per_1k_tokens": null,
+        "cache_read_per_1k_tokens": 0.000625,
+        "batch_input_per_1k_tokens": null,
+        "batch_output_per_1k_tokens": null
+      },
+      "supports": {
+        "caching": true,
+        "batch": false,
+        "vision": true
+      },
+      "min_cache_ttl_seconds": null,
+      "_note": "Multimodal (text, image, video). Cache read confirmed at $0.625/MTok. Cache writes at standard input rate (no surcharge). Batch NOT supported."
+    },
+    {
+      "model_id": "amazon.nova-pro-v1:0",
+      "display_name": "Amazon Nova Pro",
+      "release_date": "2024-12-01",
+      "status": "available",
+      "context_window": 300000,
+      "pricing": {
+        "input_per_1k_tokens": 0.0008,
+        "output_per_1k_tokens": 0.0032,
+        "cache_write_per_1k_tokens": null,
+        "cache_read_per_1k_tokens": 0.0002,
+        "batch_input_per_1k_tokens": 0.0004,
+        "batch_output_per_1k_tokens": 0.0016
+      },
+      "supports": {
+        "caching": true,
+        "batch": true,
+        "vision": true
+      },
+      "min_cache_ttl_seconds": null,
+      "_note": "Multimodal (text, image, video). Cache read at $0.20/MTok (25% of input). Cache writes at standard input rate. Batch at 50% off."
+    },
+    {
+      "model_id": "amazon.nova-lite-v1:0",
+      "display_name": "Amazon Nova Lite",
+      "release_date": "2024-12-01",
+      "status": "available",
+      "context_window": 300000,
+      "pricing": {
+        "input_per_1k_tokens": 0.00006,
+        "output_per_1k_tokens": 0.00024,
+        "cache_write_per_1k_tokens": null,
+        "cache_read_per_1k_tokens": 0.000015,
+        "batch_input_per_1k_tokens": 0.00003,
+        "batch_output_per_1k_tokens": 0.00012
+      },
+      "supports": {
+        "caching": true,
+        "batch": true,
+        "vision": true
+      },
+      "min_cache_ttl_seconds": null,
+      "_note": "Multimodal (text, image, video). Cache read estimated at 25% of input ($0.015/MTok). Batch at 50% off."
+    },
+    {
+      "model_id": "amazon.nova-micro-v1:0",
+      "display_name": "Amazon Nova Micro",
+      "release_date": "2024-12-01",
+      "status": "available",
+      "context_window": 128000,
+      "pricing": {
+        "input_per_1k_tokens": 0.000035,
+        "output_per_1k_tokens": 0.00014,
+        "cache_write_per_1k_tokens": null,
+        "cache_read_per_1k_tokens": 0.00000875,
+        "batch_input_per_1k_tokens": 0.0000175,
+        "batch_output_per_1k_tokens": 0.00007
+      },
+      "supports": {
+        "caching": true,
+        "batch": true,
+        "vision": false
+      },
+      "min_cache_ttl_seconds": null,
+      "_note": "Text-only (no vision). Cache read estimated at 25% of input ($0.00875/MTok). Batch at 50% off."
+    },
+    {
+      "model_id": "amazon.nova-2-lite-v1:0",
+      "display_name": "Amazon Nova 2 Lite",
+      "release_date": "2025-12-02",
+      "status": "available",
+      "context_window": 1000000,
+      "pricing": {
+        "input_per_1k_tokens": 0.0003,
+        "output_per_1k_tokens": 0.0025,
+        "cache_write_per_1k_tokens": null,
+        "cache_read_per_1k_tokens": 0.000075,
+        "batch_input_per_1k_tokens": null,
+        "batch_output_per_1k_tokens": null
+      },
+      "supports": {
+        "caching": true,
+        "batch": false,
+        "vision": true
+      },
+      "min_cache_ttl_seconds": null,
+      "_note": "Multimodal with extended thinking (3 intensity levels). Cache read estimated at 25% of input ($0.075/MTok). Batch not yet supported."
+    }
+  ],
+  "dropped_models": {
+    "_note": "These models were removed from the active lineup per user request.",
+    "anthropic_dropped": [
+      {
+        "model_id": "anthropic.claude-3-5-sonnet-20241022-v2:0",
+        "display_name": "Claude 3.5 Sonnet v2",
+        "reason": "Moved to Public Extended Access on Bedrock (Dec 1, 2025) with 2x pricing. Superseded by Sonnet 4.x."
+      },
+      {
+        "model_id": "anthropic.claude-3-5-haiku-20241022-v1:0",
+        "display_name": "Claude 3.5 Haiku",
+        "reason": "Deprecated. Superseded by Haiku 4.5."
+      },
+      {
+        "model_id": "anthropic.claude-3-opus-20240229-v1:0",
+        "display_name": "Claude 3 Opus",
+        "reason": "Deprecated by Anthropic. Superseded by Opus 4.x."
+      },
+      {
+        "model_id": "anthropic.claude-3-haiku-20240307-v1:0",
+        "display_name": "Claude 3 Haiku",
+        "reason": "Legacy model. Superseded by Haiku 4.5."
+      }
+    ],
+    "amazon_dropped": [
+      {
+        "model_id": "amazon.titan-text-premier-v1:0",
+        "display_name": "Amazon Titan Text Premier",
+        "reason": "Legacy model, no longer in current Bedrock model catalog. Superseded by Nova family."
+      },
+      {
+        "model_id": "amazon.titan-text-express-v1",
+        "display_name": "Amazon Titan Text Express",
+        "reason": "Legacy model. Superseded by Nova family."
+      },
+      {
+        "model_id": "amazon.titan-text-lite-v1:0",
+        "display_name": "Amazon Titan Text Lite",
+        "reason": "Legacy model. Superseded by Nova family."
+      }
+    ]
+  },
+  "bedrock_feature_support_summary": {
+    "prompt_caching_ttl": {
+      "5_min_and_1_hour": [
+        "anthropic.claude-opus-4-6-v1",
+        "anthropic.claude-sonnet-4-6",
+        "anthropic.claude-opus-4-5-20251101-v1:0",
+        "anthropic.claude-sonnet-4-5-20250929-v1:0",
+        "anthropic.claude-haiku-4-5-20251001-v1:0"
+      ],
+      "5_min_only": [
+        "anthropic.claude-opus-4-1-20250805-v1:0",
+        "anthropic.claude-opus-4-20250514-v1:0",
+        "anthropic.claude-sonnet-4-20250514-v1:0",
+        "anthropic.claude-3-7-sonnet-20250219-v1:0",
+        "amazon.nova-micro-v1:0",
+        "amazon.nova-lite-v1:0",
+        "amazon.nova-pro-v1:0",
+        "amazon.nova-premier-v1:0",
+        "amazon.nova-2-lite-v1:0"
+      ]
+    },
+    "batch_supported_on_bedrock": [
+      "amazon.nova-micro-v1:0",
+      "amazon.nova-lite-v1:0",
+      "amazon.nova-pro-v1:0"
+    ],
+    "_note": "No current-gen Anthropic models on Bedrock support batch inference. Only Nova Micro/Lite/Pro support batch."
+  },
+  "bedrock_cross_region_availability": {
+    "_note": "Prefix model ID with global./us./eu./jp./apac. for cross-region inference.",
+    "global_available": [
+      "anthropic.claude-opus-4-6-v1",
+      "anthropic.claude-sonnet-4-6",
+      "anthropic.claude-sonnet-4-5-20250929-v1:0",
+      "anthropic.claude-sonnet-4-20250514-v1:0",
+      "anthropic.claude-opus-4-5-20251101-v1:0",
+      "anthropic.claude-haiku-4-5-20251001-v1:0"
+    ],
+    "us_only": [
+      "anthropic.claude-opus-4-1-20250805-v1:0",
+      "anthropic.claude-opus-4-20250514-v1:0",
+      "anthropic.claude-3-7-sonnet-20250219-v1:0"
+    ]
+  }
+}

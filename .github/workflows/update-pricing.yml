@@ -1,0 +1,33 @@
+name: Update Bedrock Pricing
+
+on:
+  schedule:
+    - cron: '0 8 * * 1'
+  workflow_dispatch:
+
+jobs:
+  update-pricing:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Launch Cursor Cloud Agent
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+        run: |
+          curl --silent --show-error --fail \
+            --request POST \
+            --url https://api.cursor.com/v0/agents \
+            -u "${CURSOR_API_KEY}:" \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "prompt": {
+                "text": "Review the current official AWS Bedrock pricing page at https://aws.amazon.com/bedrock/pricing/. Extract pricing ONLY for Anthropic (Claude) and Amazon (Nova, Titan) foundation models. Update FE-BedrockCostOptimizer/public/data/pricing.json strictly following the existing schema. For each model: set input_1k and output_1k (per 1,000 tokens). If cache_write or cache_read prices exist, populate them; otherwise null. IMPORTANT: All models on Bedrock support batch inference at 50% of on-demand pricing. For every model, set batch_input_1k to half of input_1k, batch_output_1k to half of output_1k, and supports_batch to true. Set supports_caching and supports_vision booleans accurately. Set min_cache_ttl_seconds to 300 for Anthropic models with caching, null otherwise. Each model constraints must include a supported_tiers array. For each model, check https://docs.aws.amazon.com/bedrock/latest/userguide/service-tiers-inference.html to determine tier support. If the model appears in the 'Models and regions supported by Priority and Flex service tiers' table, set supported_tiers to [\"standard\", \"priority\", \"flex\"]. Otherwise, set supported_tiers to [\"standard\"]. IMPORTANT: For Amazon models that support batch inference, add \"batch\" to their supported_tiers array (e.g. [\"standard\", \"priority\", \"flex\", \"batch\"] or [\"standard\", \"batch\"]). Batch is mutually exclusive with other tiers for Amazon models and is represented as a tier option in the UI dropdown. For Anthropic models, do NOT add \"batch\" to supported_tiers; batch is handled separately via the supports_batch flag and a checkbox in the UI. Do NOT guess tier support from the pricing page alone, as its JavaScript tabs may not render correctly. Update metadata.last_updated to current ISO timestamp. Validate the JSON is well-formed. Do not add models from other providers."
+              },
+              "source": {
+                "repository": "https://github.com/${{ github.repository }}",
+                "ref": "main"
+              },
+              "target": {
+                "autoCreatePr": true,
+                "branchName": "automated/pricing-update"
+              }
+            }'
