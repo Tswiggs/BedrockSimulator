@@ -22,7 +22,7 @@ export function Layout() {
               <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-primary">
                 <Database className="w-5 h-5 text-primary-foreground" />
               </div>
-              <h4>Bedrock Pricing Tracker</h4>
+              <h4>Bedrock Pricing Optimizer</h4>
             </div>
 
             <nav className="flex items-center gap-1">
@@ -64,7 +64,7 @@ export function Layout() {
                 }
               >
                 <BookOpen className="w-4 h-4" />
-                <span className="hidden sm:inline">Caching Primer</span>
+                <span className="hidden sm:inline">Cost-Optimization Primer</span>
               </NavLink>
             </nav>
 

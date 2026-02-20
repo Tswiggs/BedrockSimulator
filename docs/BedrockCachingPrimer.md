@@ -65,7 +65,9 @@ Assembled into a prompt:
 
 The key insight for caching: **how much of this prompt is repeated across requests, and how can we avoid paying full price for those repeated parts?**
 
-![The Prompt Visualizer from the simulator, showing which segments of a prompt are shared across all students (blue), specific to one student (green), and unique to each request (orange).](figure_1_prompt_structure.png)
+```simulator-embed
+{"template": "graf-simple", "show": ["prompt-visualizer"]}
+```
 
 ## Tool 1: Prompt Caching
 
@@ -94,7 +96,9 @@ Example: 30 students, 5 LLM calls each = 150 requests.
 
 The simulator shows exactly where one strategy overtakes the other.
 
-![Cost comparison from the simulator's "GRAF+ w/ Context" template — 30 students, 5 passes each, with the full text of a novel as shared context. Shows assignment-level caching, submission-level caching, and no caching side by side.](figure_2_caching.png)
+```simulator-embed
+{"template": "graf-simple", "show": ["cards", "bar", "sensitivity"], "hideBatch": true}
+```
 
 ## Tool 2: Batch Inference
 
@@ -102,7 +106,9 @@ Batch inference gives a flat **50% discount** on all tokens (input and output). 
 
 For asynchronous workloads like grading, this is compelling.
 
-![Strategy comparison from the GRAF+ Simple template showing all four strategies — No Caching, Per-Assignment Cache, Per-Submission Cache, and Batch Inference — with per-class and per-student costs. The chart below sweeps Shared Context size, showing how caching strategies scale differently as shared context grows.](figure_3_batch.png)
+```simulator-embed
+{"template": "graf-simple", "show": ["cards", "bar", "sensitivity"]}
+```
 
 ## Tool 3: Managing Chat History Costs
 
@@ -116,7 +122,9 @@ Keep the most recent 4–5 turns; older messages drop off. Costs stay flat regar
 
 This is the default approach in all chat-based simulator templates. Costs ramp as the window fills, then flatten at the cap. Caching the stable prefix provides a consistent discount on every turn.
 
-![Per-turn cost for a single student across a 40-message session using a sliding window. History ramps from 0 to the 3,650-token cap around turn 11, then costs flatten. The "With Caching" line shows the savings from caching the stable assignment prefix.](figure_5_per_turn_sliding_window.png)
+```simulator-embed
+{"template": "clarity-chat", "show": ["per-turn"]}
+```
 
 ### Chat history summarization
 
@@ -128,9 +136,9 @@ This is a **quality feature, not a cost-saving one** — you're spending tokens 
 
 Compare the smooth cost curve of the sliding window with the sawtooth pattern below. Each summarization call fires when the history cap is reached, producing spikes and drops. The "Cache in Prefix" strategy has the lowest per-turn cost between spikes, but periodic cache rewrites when the summary updates eat into those savings.
 
-![Per-turn cost for a single student across a 40-message session with chat history summarization enabled. The sawtooth pattern shows summarization calls firing when the history cap is reached. Three strategies are compared: no caching, caching the prefix only, and caching the prefix with the chat summary included.](figure_5_per_turn_summarization.png)
-
-![Clarity Chat XL template with summarization enabled, comparing three strategies: No Caching, Cache Prefix, and Cache Prefix + Chat Summary. The cost cards show that summarization calls ($3.47) are a significant line item across all strategies. The sensitivity chart sweeps Messages per Student, showing that caching the summary in the prefix only becomes the cheapest option around 40 messages — and even then, the savings over just caching the prefix are modest.](figure_4_summary.png)
+```simulator-embed
+{"template": "clarity-chat-xl", "show": ["cards", "sensitivity", "per-turn"]}
+```
 
 ## Choosing the Right Strategy
 

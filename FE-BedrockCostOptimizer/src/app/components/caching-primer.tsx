@@ -5,6 +5,7 @@ import rehypeSlug from "rehype-slug";
 import type { Components } from "react-markdown";
 import content from "@docs/BedrockCachingPrimer.md?raw";
 import { getPricingData } from "./pricing-data";
+import { SimulatorEmbed } from "./simulator-embed";
 
 const BASE_URL = import.meta.env.BASE_URL;
 
@@ -119,6 +120,14 @@ const components: Components = {
     if (className === "language-pricing-row") {
       return <PricingRow name={String(children).trim()} />;
     }
+    if (className === "language-simulator-embed") {
+      try {
+        const config = JSON.parse(String(children).trim());
+        return <SimulatorEmbed {...config} />;
+      } catch {
+        return <code className="block text-sm font-mono text-destructive">Invalid simulator-embed config</code>;
+      }
+    }
     const isBlock = className?.includes("language-");
     if (isBlock) {
       return (
@@ -132,8 +141,11 @@ const components: Components = {
     );
   },
   pre: ({ children }) => {
-    if (isValidElement(children) && (children as React.ReactElement<{ name?: string }>).type === PricingRow) {
-      return <>{children}</>;
+    if (isValidElement(children)) {
+      const cls = (children as React.ReactElement<{ className?: string }>).props?.className ?? "";
+      if (cls === "language-pricing-row" || cls === "language-simulator-embed") {
+        return <>{children}</>;
+      }
     }
     return (
       <pre className="bg-card border border-border rounded-lg p-4 mb-4 overflow-x-auto text-sm leading-relaxed">
@@ -185,7 +197,7 @@ const components: Components = {
 
 export function CachingPrimer() {
   return (
-    <div className="mx-auto max-w-3xl py-4">
+    <div className="mx-auto max-w-5xl py-4 px-4">
       <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]} components={components}>
         {content}
       </ReactMarkdown>
