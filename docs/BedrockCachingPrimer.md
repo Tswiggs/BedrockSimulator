@@ -132,7 +132,7 @@ Instead of letting old context vanish, periodically compress the full conversati
 
 This is a **quality feature, not a cost-saving one** — you're spending tokens on summarization calls to improve memory. The cost question is whether caching the summary as part of the prefix saves enough to offset those calls. For most of our workloads (12–20 turns/student), it doesn't. At 40+ turns, the math starts to work. The simulator's "Clarity Chat XL" template lets you find the break-even point.
 
-**Bottom line:** for the use cases modeled in the simulator, summarization probably doesn't justify its cost and complexity.
+**Bottom line:** for the use cases modeled in the simulator, caching summarization probably doesn't justify its cost and complexity.
 
 Compare the smooth cost curve of the sliding window with the sawtooth pattern below. Each summarization call fires when the history cap is reached, producing spikes and drops. The "Cache in Prefix" strategy has the lowest per-turn cost between spikes, but periodic cache rewrites when the summary updates eat into those savings.
 
