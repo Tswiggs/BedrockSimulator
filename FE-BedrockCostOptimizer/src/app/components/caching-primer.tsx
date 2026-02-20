@@ -1,10 +1,64 @@
+import React, { isValidElement } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
 import type { Components } from "react-markdown";
-import content from "../content/BedrockCachingPrimer.md?raw";
+import content from "@docs/BedrockCachingPrimer.md?raw";
+import { getPricingData } from "./pricing-data";
 
 const BASE_URL = import.meta.env.BASE_URL;
+
+function formatPrice(perThousand: number | null): string {
+  if (perThousand === null) return "\u2014";
+  const v = perThousand * 1000;
+  if (v < 0.01) return `$${v.toFixed(4)}`;
+  if (v < 0.1) return `$${v.toFixed(3)}`;
+  return `$${v.toFixed(2)}`;
+}
+
+const PRICING_COLUMNS: { label: string; key: string }[] = [
+  { label: "Input", key: "input_1k" },
+  { label: "Output", key: "output_1k" },
+  { label: "Cache Write", key: "cache_write_1k" },
+  { label: "Cache Read", key: "cache_read_1k" },
+  { label: "Batch Input", key: "batch_input_1k" },
+  { label: "Batch Output", key: "batch_output_1k" },
+];
+
+function PricingRow({ name }: { name: string }) {
+  const { models } = getPricingData();
+  const model = models.find((m) => m.name === name);
+  if (!model) return <p className="text-destructive text-sm">Unknown model: {name}</p>;
+  const p = model.pricing;
+  const price = (key: string) => (p as unknown as Record<string, number | null>)[key] ?? null;
+  return (
+    <div className="my-4 overflow-x-auto rounded-lg border border-border">
+      <table className="w-full text-sm">
+        <thead className="bg-card border-b border-border">
+          <tr>
+            {PRICING_COLUMNS.map((col) => (
+              <th key={col.key} className="px-3 py-2 text-left text-xs font-semibold text-muted-foreground">
+                {col.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            {PRICING_COLUMNS.map((col) => (
+              <td key={col.key} className="px-3 py-2 text-sm text-foreground font-mono">
+                {formatPrice(price(col.key))}
+              </td>
+            ))}
+          </tr>
+        </tbody>
+      </table>
+      <div className="px-3 py-1.5 text-xs text-muted-foreground border-t border-border bg-card">
+        per 1M tokens
+      </div>
+    </div>
+  );
+}
 
 const components: Components = {
   h1: ({ children }) => (
@@ -62,6 +116,9 @@ const components: Components = {
     </blockquote>
   ),
   code: ({ className, children }) => {
+    if (className === "language-pricing-row") {
+      return <PricingRow name={String(children).trim()} />;
+    }
     const isBlock = className?.includes("language-");
     if (isBlock) {
       return (
@@ -74,11 +131,16 @@ const components: Components = {
       </code>
     );
   },
-  pre: ({ children }) => (
-    <pre className="bg-card border border-border rounded-lg p-4 mb-4 overflow-x-auto text-sm leading-relaxed">
-      {children}
-    </pre>
-  ),
+  pre: ({ children }) => {
+    if (isValidElement(children) && (children as React.ReactElement<{ name?: string }>).type === PricingRow) {
+      return <>{children}</>;
+    }
+    return (
+      <pre className="bg-card border border-border rounded-lg p-4 mb-4 overflow-x-auto text-sm leading-relaxed">
+        {children}
+      </pre>
+    );
+  },
   img: ({ src, alt }) => {
     const resolvedSrc =
       src && !src.startsWith("http") ? `${BASE_URL}docs/${src}` : src;

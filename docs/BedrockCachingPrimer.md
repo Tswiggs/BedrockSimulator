@@ -1,5 +1,9 @@
 # Reducing Inference Costs on Amazon Bedrock
 
+## TL;DR
+
+> When a teacher grades 30 essays with 5 feedback passes each, that's 150 LLM calls — and every one resends the same rubric, instructions, and source material at full price. This document explores how to stop paying for that repetition. The biggest wins come from **prompt caching** (up to 90% off repeated input) and **batch inference** (50% off for async work like grading), and the right choice depends on whether your workload is synchronous or asynchronous, and how much of the prompt is shared across requests. For live chat experiences, the calculus is different — we walk through what works there too. A companion [Workload Simulator](#/simulator) lets you plug in your own workload parameters and compare strategies side by side.
+
 ## Contents
 
 - [The Cost Problem](#the-cost-problem)
@@ -16,94 +20,113 @@
 
 ## The Cost Problem
 
-Every time your application calls an LLM through Bedrock, you're billed based on how much text you send in (the **prompt**) and how much text the model generates back (the **response**). Both are measured in **tokens** — roughly ¾ of a word each. When you're running the same kind of request hundreds or thousands of times — say, grading every student's paper against the same rubric — those costs add up fast because you're sending the same rubric, instructions, and reference material over and over again.
+Bedrock bills per token (≈ ¾ of a word) on both input and output. When you're making hundreds of similar requests — grading 30 students × 5 passes each against the same rubric — you're paying full price to resend the same instructions, rubric, and reference material every time.
 
-Bedrock gives us some tools to bring those costs down: **model selection**, **service tiers**, **prompt caching**, **batch inference**. Additionally we will explore **chat summarization** as a cost saving technique for chat experiences. Which one saves you the most depends on your workload. I've built a simulator to help answer that question, and this document walks through what I learned.
+Bedrock offers several levers to reduce this: **model selection**, **prompt caching**, **batch inference**, and **service tiers**. We also explore **chat summarization** for conversational workloads. Which lever saves the most depends on your workload — this document walks through each technique, and the companion [Workload Simulator](#/simulator) lets you model the cost impact with your own parameters.
 
 ## The Models We're Using
 
-The biggest single factor in your Bedrock bill is which model you choose. Here are some we're currently working with:
+Model choice is the single biggest factor in your Bedrock bill.
 
-**Claude Sonnet 4.5/4.6** is our primary model for GRAF+ grading and Clarity Chat features. It's capable enough for nuanced feedback and writing assistance, and at $3.00 / $15.00 per million tokens (input / output), it sits in the mid-range of Anthropic's lineup. Sonnet supports prompt caching but not batch inference on Bedrock.
+**Claude Sonnet 4.5/4.6** — Primary model for GRAF+ grading and Clarity Chat. Supports prompt caching and batch inference.
 
-**Claude Haiku 4.5** is a good fit for lower-complexity tasks — lighter grading rubrics, simpler chat interactions, or auxiliary processing steps that don't need a larger model. At $1.00 / $5.00 per million tokens, it's 3× cheaper than Sonnet with surprisingly good quality for straightforward work.
+```pricing-row
+Claude Sonnet 4.6
+```
 
-**Amazon Nova 2 Lite** is worth evaluating for any workload where it meets quality requirements. Amazon is currently pricing it at $0.30 / $2.50 per million tokens — roughly **8× cheaper** than Sonnet on average for our workloads. It also supports batch inference (another 50% off) and automatic prompt caching. Amazon's Nova models also offer a **flex service tier** — you accept a couple of seconds of added latency per request and get the same 50% discount as batch inference, but responses come back immediately rather than requiring you to wait for a batch job to complete. If a Nova 2 Lite evaluation shows acceptable quality for a given task, the cost difference is hard to ignore.
+**Claude Haiku 4.5** — Good for lower-complexity tasks: lighter rubrics, simpler chat, auxiliary processing. 3× cheaper than Sonnet with strong quality for straightforward work.
 
-The cost-saving strategies in this document — caching, batching, summarization — all compound on top of model selection. A 90% cache-read discount on Sonnet saves dollars; the same optimization on an already-cheap model saves pennies. In practice, the first question is always "can a cheaper model do this job well enough?" and the techniques below help you optimize from there.
+```pricing-row
+Claude Haiku 4.5
+```
+
+**Amazon Nova 2 Lite** — Worth evaluating wherever it meets quality requirements — roughly **8× cheaper** than Sonnet. Supports batch inference (50% off) and automatic prompt caching. Nova also offers a **flex service tier**: same 50% discount as batch, but responses return immediately with just a couple seconds of added latency. If quality holds, the cost difference is hard to ignore.
+
+```pricing-row
+Amazon Nova 2 Lite
+```
+
+The cost-saving strategies below — caching, batching, summarization — compound on top of model selection. A 90% cache-read discount on Sonnet saves dollars; the same optimization on an already-cheap model saves pennies. The first question is always: *can a cheaper model do this job well enough?*
 
 ## How a Prompt Is Put Together
 
-A typical request to an LLM has layers. Think of a teacher handing out an essay assignment. There's context that's the same for every student in the class — the instructions, the grading rubric, maybe the full text of the book they're writing about. Then there's content that's specific to each student — their essay, their question, their draft. Finally, there's the specific ask for this particular request — "grade the thesis statement" or "give feedback on paragraph 3."
+A typical LLM request has layers:
 
-When we send all of this to Bedrock, it gets assembled into a single prompt:
+1. **Shared context** — instructions, rubric, source material (same for every student)
+2. **Per-student content** — their essay, draft, or question
+3. **Per-request instruction** — the specific ask ("grade the thesis statement")
+
+Assembled into a prompt:
 
 ```
 [Instructions & Rubric] → [Source Material] → [Student's Work] → [Specific Request]
  ◄─── same for everyone ──────────────────►   ◄── changes per student or per turn ──►
 ```
 
-The key to the Prompt Caching cost-saving strategy is: **how much of this prompt is repeated across requests, and what can we do to avoid paying full price for the repeated parts?**
+The key insight for caching: **how much of this prompt is repeated across requests, and how can we avoid paying full price for those repeated parts?**
 
 ![The Prompt Visualizer from the simulator, showing which segments of a prompt are shared across all students (blue), specific to one student (green), and unique to each request (orange).](figure_1_prompt_structure.png)
 
 ## Tool 1: Prompt Caching
 
-Prompt caching lets Bedrock remember the beginning of your prompt so you don't have to pay full price to send it again. The catch is that caching only works on a **contiguous prefix** — meaning it starts from the very beginning of the prompt and extends forward. You can't cache something in the middle. This is why prompt structure matters: stable, shared content goes first, and the parts that change go at the end.
+Prompt caching lets Bedrock remember the beginning of your prompt so subsequent requests don't pay full price for the same content. The constraint: caching only works on a **contiguous prefix** — it starts from the beginning and extends forward. You can't cache a middle segment. This is why prompt structure matters: stable content first, variable content last.
 
-The exact pricing depends on the model provider. For **Anthropic models** (Claude Sonnet, Haiku, Opus), the first request pays a surcharge to write the prefix to cache (1.25× the normal input rate for a 5-minute TTL), and subsequent requests read from cache at 0.1× — a 90% discount. **Amazon Nova models** handle caching automatically with different economics: cache writes are at the standard input rate (no surcharge), and cache reads are at roughly 25% of the input rate — a 75% discount. The simulator accounts for these per-model differences.
+Pricing differs by provider:
+
+- **Anthropic** (Claude): cache writes cost 1.25× input rate (5-min TTL), cache reads cost 0.1× — a **90% discount**.
+- **Amazon Nova**: cache writes at standard input rate (no surcharge), cache reads at ~25% — a **75% discount**. Caching is automatic.
 
 ### Cache Time to Live (TTL)
 
-A cached prefix doesn't last forever. Bedrock offers two TTL options: **5 minutes** and **1 hour**. The 5-minute cache is cheaper to write (1.25× the normal input rate on Anthropic models), while the 1-hour cache costs more up front (2× the normal input rate) but stays available longer. The 1-hour option is available on newer Anthropic models (Sonnet 4.5+, Haiku 4.5, Opus 4.5+); older models only support the 5-minute TTL. Writing to the cache happens automatically if a section of the prompt is tagged as the prefix and there is no cache hit found.
+Bedrock offers **5-minute** and **1-hour** TTLs. The 5-minute TTL has a lower write cost (1.25× on Anthropic); the 1-hour TTL costs more up front (2×) but persists longer. The 1-hour option is available on Sonnet 4.5+, Haiku 4.5, and Opus 4.5+.
 
-For the grading workflow, where all 150 requests might run within a few minutes, the 5-minute TTL is sufficient — the cache stays warm for the entire batch. But for a live chat like the Clarity writing assistant, the student is working on their paper over the course of an hour or more. A 5-minute cache would expire between turns every time the student pauses to think, revise, or step away, and you'd pay the write cost again on the next message. The 1-hour TTL keeps the cached assignment context available for the duration of a realistic writing session.
+**Grading workflows** (150 requests in a few minutes): 5-minute TTL is sufficient — the cache stays warm for the entire run. **Live chat** (student working over an hour): 5-minute TTL expires between turns whenever the student pauses. The 1-hour TTL keeps the cached context available for a realistic session.
 
-The simulator lets you toggle between TTL settings to see the cost impact. It's worth noting that these simulations assume an ideal, uninterrupted session — in practice, students take breaks, get distracted, and come back later. A cache expiring mid-session isn't catastrophic (the next request just pays a fresh write), but it does erode the savings you'd see in the simulator.
+The simulator lets you toggle TTL to see the cost impact. Note that simulations assume ideal, uninterrupted sessions — real-world cache expiries will erode savings modestly.
 
 ### How much should you cache?
 
-Consider a teacher who has 30 students each writing an essay about *The Great Gatsby*. We make on average 5 calls to the LLM for each student's submission to generate feedback in batches. That's 150 total requests.
+Example: 30 students, 5 LLM calls each = 150 requests.
 
-- **Cache at the assignment level:** Cache the instructions + rubric. Every one of those 150 requests reads this from the cache at 90% off. Each student's essay and the specific grading instruction are sent fresh. This works well when the shared material is large. For example maybe we allow the teacher to attach the full text of *The Great Gatsby* as grounding context for the assignment.  
+- **Assignment-level caching:** Cache instructions + rubric. All 150 requests read from cache at 90% off. Each student's essay is sent fresh. Best when shared material is large (e.g., full text of a novel as grounding context).
 
-- **Cache at the submission level:** Go further and also cache each student's essay as part of the prefix. Now you're paying a cache-write for each of the 30 students, but the remaining 4 grading passes per student get to read the essay from cache too. This pays off when you're making enough passes per student to recoup the per-student write cost.
+- **Submission-level caching:** Also cache each student's essay in the prefix. You pay a cache-write per student (30 writes), but the remaining 4 passes per student read the essay from cache too. Pays off when passes-per-student is high enough to recoup the per-student write cost.
 
-The simulator lets you adjust these parameters and see exactly where one strategy overtakes the other. With a large shared context like a full novel, assignment-level caching alone is powerful. When the shared context is smaller, caching deeper into each student's submission starts to matter more.
+The simulator shows exactly where one strategy overtakes the other.
 
 ![Cost comparison from the simulator's "GRAF+ w/ Context" template — 30 students, 5 passes each, with the full text of a novel as shared context. Shows assignment-level caching, submission-level caching, and no caching side by side.](figure_2_caching.png)
 
 ## Tool 2: Batch Inference
 
-Batch inference is only an option situationally: you submit all your requests at once as a batch job and get a flat **50% discount** on everything — input and output tokens. The trade-off is that you're giving up real-time responses. Results come back when the batch completes, not one at a time. Officially you have to be willing to wait 24 hours for your results, but in practice most workloads are processed within minutes. 
+Batch inference gives a flat **50% discount** on all tokens (input and output). The trade-off: you submit all requests as a batch job and wait for results — officially up to 24 hours, though most jobs complete in minutes. It cannot be combined with caching.
 
-For something like grading, where you don't need results instantly, this is a compelling option. It can't be combined with caching — it's one or the other.
+For asynchronous workloads like grading, this is compelling.
 
 ![Strategy comparison from the GRAF+ Simple template showing all four strategies — No Caching, Per-Assignment Cache, Per-Submission Cache, and Batch Inference — with per-class and per-student costs. The chart below sweeps Shared Context size, showing how caching strategies scale differently as shared context grows.](figure_3_batch.png)
 
 ## Tool 3: Managing Chat History Costs
 
-The first two tools apply cleanly to the grading workflow because it runs asynchronously — you can submit everything at once. But what about **live conversations**, like a chatbot that helps students write their papers, or an AI that lets them interview a historical figure based on source material?
+Caching and batching work well for async grading workflows. Live conversations are different: history grows every turn, and caching the full conversation means rewriting the cache each turn — including all the stable shared material. With 50K tokens of source text, a single cache rewrite costs more than sending chat history fresh many times over.
 
-In a chat, the conversation history grows with every message. You might think you'd want to cache the whole conversation, but the math works against you: every time the history changes (i.e., every turn), the cache has to be re-written — including all the shared material that hasn't changed. With 50K tokens of source text, a single cache re-write costs more than just sending the chat history as fresh input many times over.
-
-The practical approach is to **cache only the stable parts** (instructions and source material) and send the conversation history as regular input. That leaves two techniques for keeping those history costs under control.
+The practical approach: **cache only the stable prefix** (instructions + source material) and send conversation history as regular input. Two techniques keep history costs manageable:
 
 ### Sliding window
 
-The most straightforward approach is a **sliding window**: you keep the most recent few exchanges (roughly the last 4–5 turns) in the context, and older messages simply fall off. This keeps costs flat and predictable regardless of how long the session runs. The trade-off is that the AI loses awareness of what happened earlier in the conversation — if a student referenced something from ten turns ago, the chatbot won't remember it.
+Keep the most recent 4–5 turns; older messages drop off. Costs stay flat regardless of session length. The trade-off: the AI loses context from earlier in the conversation.
 
-For many use cases this is perfectly acceptable, and it's the default approach in all of the chat-based simulator templates. The per-turn cost chart below shows what this looks like over a 40-message session — costs ramp up as the history window fills, then flatten once the cap is reached. Caching the stable prefix (assignment context and source material) provides a consistent discount on every turn.
+This is the default approach in all chat-based simulator templates. Costs ramp as the window fills, then flatten at the cap. Caching the stable prefix provides a consistent discount on every turn.
 
 ![Per-turn cost for a single student across a 40-message session using a sliding window. History ramps from 0 to the 3,650-token cap around turn 11, then costs flatten. The "With Caching" line shows the savings from caching the stable assignment prefix.](figure_5_per_turn_sliding_window.png)
 
 ### Chat history summarization
 
-Summarization is a middle ground between a full sliding window (cheap but forgetful) and keeping the entire conversation history (accurate but expensive). Instead of letting old context disappear entirely, you periodically use a cheaper model like Haiku to compress the full conversation into a short summary. That summary gets included in future requests alongside the sliding window, so the AI retains a general sense of the whole conversation without carrying the full token cost of every past message.
+Instead of letting old context vanish, periodically compress the full conversation into a short summary using a cheaper model (e.g., Haiku). Include the summary alongside the sliding window so the AI retains general awareness of the full conversation.
 
-This is a **quality feature, not a cost-saving one** — you're spending tokens on summarization calls to give the chatbot better memory. The cost question is whether you can then **cache** that summary as part of the prompt prefix, since it stays stable for several turns between updates. For most of our workloads (12–20 turns per student), the summarization calls themselves add more cost than caching the summary saves, so it's hard to justify. But in longer sessions — 40+ turns — the math starts to work. The simulator's "Clarity Chat XL" template lets you experiment with this and find the break-even point for your specific parameters. For the use cases that are outlined in the simulator, the cost savings for caching the chat history probably doesn't justify the expense and complexity of building that into the product.
+This is a **quality feature, not a cost-saving one** — you're spending tokens on summarization calls to improve memory. The cost question is whether caching the summary as part of the prefix saves enough to offset those calls. For most of our workloads (12–20 turns/student), it doesn't. At 40+ turns, the math starts to work. The simulator's "Clarity Chat XL" template lets you find the break-even point.
 
-Compare the smooth, predictable cost curve of the sliding window above with the sawtooth pattern of summarization below. Each time the history cap is reached, a summarization call fires and the history resets — producing the spikes and drops. The "Cache in Prefix" strategy (purple) has the lowest per-turn cost between spikes, but the periodic cache re-writes when the summary updates eat into those savings.
+**Bottom line:** for the use cases modeled in the simulator, summarization probably doesn't justify its cost and complexity.
+
+Compare the smooth cost curve of the sliding window with the sawtooth pattern below. Each summarization call fires when the history cap is reached, producing spikes and drops. The "Cache in Prefix" strategy has the lowest per-turn cost between spikes, but periodic cache rewrites when the summary updates eat into those savings.
 
 ![Per-turn cost for a single student across a 40-message session with chat history summarization enabled. The sawtooth pattern shows summarization calls firing when the history cap is reached. Three strategies are compared: no caching, caching the prefix only, and caching the prefix with the chat summary included.](figure_5_per_turn_summarization.png)
 
@@ -111,7 +134,7 @@ Compare the smooth, predictable cost curve of the sliding window above with the 
 
 ## Choosing the Right Strategy
 
-Each scenario below maps to a template in the simulator. Load the template, adjust the parameters to match your workload, and compare the strategies side by side.
+Each scenario below maps to a template in the [Workload Simulator](#/simulator). Load a template, adjust parameters to match your workload, and compare strategies side by side.
 
 | Your workload looks like… | Simulator template |
 |---------------------------|------------|
