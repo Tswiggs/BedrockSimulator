@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router";
 import {
   Card, CardHeader, CardTitle, CardDescription, CardContent,
 } from "./ui/card";
@@ -877,6 +878,7 @@ function formatCost(value: number): string {
 // ---------------------------------------------------------------------------
 
 export function WorkloadSimulator() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const pricingData = getPricingData();
 
   const cachingModels = useMemo(
@@ -952,6 +954,18 @@ export function WorkloadSimulator() {
     },
     [simulationTemplate, resetToTemplate]
   );
+
+  useEffect(() => {
+    const tmplParam = searchParams.get("template");
+    if (tmplParam && tmplParam in TEMPLATES) {
+      const key = tmplParam as TemplateKey;
+      setSimulationTemplate(key);
+      resetToTemplate(key);
+      searchParams.delete("template");
+      setSearchParams(searchParams, { replace: true });
+      window.scrollTo(0, 0);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- Input mode ---
   const handleInputModeChange = useCallback(

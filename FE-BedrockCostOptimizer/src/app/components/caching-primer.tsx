@@ -32,12 +32,12 @@ const components: Components = {
   ),
   em: ({ children }) => <em className="italic">{children}</em>,
   a: ({ href, children }) => {
-    const isAnchor = href?.startsWith("#");
+    const isInternal = href?.startsWith("#");
     return (
       <a
         href={href}
         className="text-secondary underline underline-offset-2 hover:text-secondary/80 transition-colors"
-        {...(!isAnchor && { target: "_blank", rel: "noopener noreferrer" })}
+        {...(!isInternal && { target: "_blank", rel: "noopener noreferrer" })}
       >
         {children}
       </a>

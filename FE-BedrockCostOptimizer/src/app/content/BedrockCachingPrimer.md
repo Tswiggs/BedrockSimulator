@@ -115,8 +115,8 @@ Each scenario below maps to a template in the simulator. Load the template, adju
 
 | Your workload looks like… | Simulator template |
 |---------------------------|------------|
-| Grading student work with a rubric and modest shared context | **GRAF+ Simple** — compare assignment-level vs. submission-level caching, and batch inference |
-| Same, but with large shared source material (a novel, textbook chapters) | **GRAF+ w/ Context** — see how a large shared prefix amplifies caching savings |
-| A writing-assistant chatbot where students are actively drafting | **Clarity Chat** — explore caching the stable assignment context while sending the live draft and chat history fresh |
-| Same, but with longer sessions where the AI losing older context is a concern | **Clarity Chat XL** — evaluate whether chat summarization is worth the added cost and complexity |
-| An interactive assignment where students chat with an AI grounded in source material | **Interactive AI Assignment** — the strongest caching scenario, with large shared context and small per-turn input |
+| Grading student work with a rubric and modest shared context | [**GRAF+ Simple**](#/simulator?template=graf-simple) — compare assignment-level vs. submission-level caching, and batch inference |
+| Same, but with large shared source material (a novel, textbook chapters) | [**GRAF+ w/ Context**](#/simulator?template=graf-literary) — see how a large shared prefix amplifies caching savings |
+| A writing-assistant chatbot where students are actively drafting | [**Clarity Chat**](#/simulator?template=clarity-chat) — explore caching the stable assignment context while sending the live draft and chat history fresh |
+| Same, but with longer sessions where the AI losing older context is a concern | [**Clarity Chat XL**](#/simulator?template=clarity-chat-xl) — evaluate whether chat summarization is worth the added cost and complexity |
+| An interactive assignment where students chat with an AI grounded in source material | [**Interactive AI Assignment**](#/simulator?template=interactive-ai) — the strongest caching scenario, with large shared context and small per-turn input |
