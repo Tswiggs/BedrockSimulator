@@ -4,6 +4,8 @@
 
 > When a teacher grades 30 essays with 5 feedback passes each, that's 150 LLM calls — and every one resends the same rubric, instructions, and source material at full price. This document explores how to stop paying for that repetition. The biggest wins come from **prompt caching** (up to 90% off repeated input) and **batch inference** (50% off for async work like grading), and the right choice depends on whether your workload is synchronous or asynchronous, and how much of the prompt is shared across requests. For live chat experiences, the calculus is different — we walk through what works there too. A companion [Workload Simulator](#/simulator) lets you plug in your own workload parameters and compare strategies side by side.
 
+> Authors Note: The figures presented here are grounded in historical averages and estimated future implementations.  They are highlight potential applications of the various cost saving mechanisms and are not a guarantee of how much these hypothetical features would cost to operate in the real world. 
+
 ## Contents
 
 - [The Cost Problem](#the-cost-problem)
