@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from "react-router";
-import { LayoutGrid, Calculator, Database, Clock } from "lucide-react";
+import { LayoutGrid, Calculator, BookOpen, Database, Clock } from "lucide-react";
 import { getPricingData } from "./pricing-data";
 
 export function Layout() {
@@ -52,6 +52,19 @@ export function Layout() {
               >
                 <Calculator className="w-4 h-4" />
                 <span className="hidden sm:inline">Workload Simulator</span>
+              </NavLink>
+              <NavLink
+                to="/primer"
+                className={({ isActive }) =>
+                  `flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  }`
+                }
+              >
+                <BookOpen className="w-4 h-4" />
+                <span className="hidden sm:inline">Caching Primer</span>
               </NavLink>
             </nav>
 

@@ -2,6 +2,7 @@ import { createHashRouter } from "react-router";
 import { Layout } from "./components/layout";
 import { PricingMatrix } from "./components/pricing-matrix";
 import { WorkloadSimulator } from "./components/workload-simulator";
+import { CachingPrimer } from "./components/caching-primer";
 
 export const router = createHashRouter([
   {
@@ -10,6 +11,7 @@ export const router = createHashRouter([
     children: [
       { index: true, Component: PricingMatrix },
       { path: "simulator", Component: WorkloadSimulator },
+      { path: "primer", Component: CachingPrimer },
       {
         path: "*",
         Component: () => (
