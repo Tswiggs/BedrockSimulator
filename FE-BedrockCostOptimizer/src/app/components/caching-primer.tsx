@@ -1,5 +1,6 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeSlug from "rehype-slug";
 import type { Components } from "react-markdown";
 import content from "../content/BedrockCachingPrimer.md?raw";
 
@@ -30,16 +31,18 @@ const components: Components = {
     <strong className="font-semibold text-foreground">{children}</strong>
   ),
   em: ({ children }) => <em className="italic">{children}</em>,
-  a: ({ href, children }) => (
-    <a
-      href={href}
-      className="text-secondary underline underline-offset-2 hover:text-secondary/80 transition-colors"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      {children}
-    </a>
-  ),
+  a: ({ href, children }) => {
+    const isAnchor = href?.startsWith("#");
+    return (
+      <a
+        href={href}
+        className="text-secondary underline underline-offset-2 hover:text-secondary/80 transition-colors"
+        {...(!isAnchor && { target: "_blank", rel: "noopener noreferrer" })}
+      >
+        {children}
+      </a>
+    );
+  },
   ul: ({ children }) => (
     <ul className="list-disc pl-6 mb-4 space-y-2 text-[var(--text-base)] font-[family-name:var(--font-body)] leading-relaxed">
       {children}
@@ -121,7 +124,7 @@ const components: Components = {
 export function CachingPrimer() {
   return (
     <div className="mx-auto max-w-3xl py-4">
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]} components={components}>
         {content}
       </ReactMarkdown>
     </div>

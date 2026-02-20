@@ -1,5 +1,19 @@
 # Reducing Inference Costs on Amazon Bedrock
 
+## Contents
+
+- [The Cost Problem](#the-cost-problem)
+- [The Models We're Using](#the-models-were-using)
+- [How a Prompt Is Put Together](#how-a-prompt-is-put-together)
+- [Tool 1: Prompt Caching](#tool-1-prompt-caching)
+  - [Cache Time to Live (TTL)](#cache-time-to-live-ttl)
+  - [How much should you cache?](#how-much-should-you-cache)
+- [Tool 2: Batch Inference](#tool-2-batch-inference)
+- [Tool 3: Managing Chat History Costs](#tool-3-managing-chat-history-costs)
+  - [Sliding window](#sliding-window)
+  - [Chat history summarization](#chat-history-summarization)
+- [Choosing the Right Strategy](#choosing-the-right-strategy)
+
 ## The Cost Problem
 
 Every time your application calls an LLM through Bedrock, you're billed based on how much text you send in (the **prompt**) and how much text the model generates back (the **response**). Both are measured in **tokens** — roughly ¾ of a word each. When you're running the same kind of request hundreds or thousands of times — say, grading every student's paper against the same rubric — those costs add up fast because you're sending the same rubric, instructions, and reference material over and over again.
